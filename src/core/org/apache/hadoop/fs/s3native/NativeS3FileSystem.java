@@ -73,6 +73,7 @@ public class NativeS3FileSystem extends FileSystem {
   private static final long MAX_S3_FILE_SIZE = 5 * 1024 * 1024 * 1024L;
   static final String PATH_DELIMITER = Path.SEPARATOR;
   private static final int S3_MAX_LISTING_LENGTH = 1000;
+  private long defaultBlockSize = 0;
   
   private class NativeS3FsInputStream extends FSInputStream {
     
@@ -218,6 +219,8 @@ public class NativeS3FileSystem extends FileSystem {
     this.uri = URI.create(uri.getScheme() + "://" + uri.getAuthority());
     this.workingDir =
       new Path("/user", System.getProperty("user.name")).makeQualified(this);
+    this.defaultBlockSize = conf.getLong("fs.s3.block.size", MAX_S3_FILE_SIZE);
+
   }
   
   private static NativeFileSystemStore createDefaultStore(Configuration conf) {
@@ -402,12 +405,12 @@ public class NativeS3FileSystem extends FileSystem {
   }
   
   private FileStatus newFile(FileMetadata meta, Path path) {
-    return new FileStatus(meta.getLength(), false, 1, MAX_S3_FILE_SIZE,
+    return new FileStatus(meta.getLength(), false, 1, this.defaultBlockSize,
         meta.getLastModified(), path.makeQualified(this));
   }
   
   private FileStatus newDirectory(Path path) {
-    return new FileStatus(0, true, 1, MAX_S3_FILE_SIZE, 0,
+    return new FileStatus(0, true, 1, this.defaultBlockSize, 0,
         path.makeQualified(this));
   }
 
